@@ -3,15 +3,23 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API_BASE from '../config';
 
-const ProductCard = ({ _id, name, price, image, rating, category, onAddToCart, onBuyNow }) => {
+const ProductCard = ({ _id, name, price, image, rating, category, sizes, onAddToCart, onBuyNow }) => {
+    const [selectedSizeIndex, setSelectedSizeIndex] = useState(0);
+    const activeSize = sizes && sizes.length > 0 ? sizes[selectedSizeIndex] : null;
+
+    const displayPrice = activeSize ? activeSize.price : price;
+    const displayOriginalVal = activeSize?.originalPrice ? activeSize.originalPrice : Math.round(displayPrice * 1.5);
+    const displayOrigPrice = displayOriginalVal > displayPrice ? displayOriginalVal : displayPrice;
+    const displayDiscount = displayOrigPrice > displayPrice ? Math.round(((displayOrigPrice - displayPrice) / displayOrigPrice) * 100) : 0;
+    const displayImage = activeSize?.image ? activeSize.image : image;
+
     const getImageUrl = (path) => {
         if (!path) return '/images/sample.jpg';
         return path.startsWith('http') ? path : `${API_BASE}${path}`;
     };
 
-    const imageUrl = getImageUrl(image);
+    const imageUrl = getImageUrl(displayImage);
     const [imageLoaded, setImageLoaded] = useState(false);
-    const [qty, setQty] = useState(1);
     const [isAnimating, setIsAnimating] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const navigate = useNavigate();
@@ -19,7 +27,7 @@ const ProductCard = ({ _id, name, price, image, rating, category, onAddToCart, o
     const handleAddClick = (e) => {
         e.stopPropagation();
         setIsAnimating(true);
-        onAddToCart({ _id, name, price, image }, qty);
+        onAddToCart({ _id, name, price: displayPrice, image: displayImage }, 1); // Fixed quantity to 1
 
         // Show small toast
         setShowToast(true);
@@ -35,16 +43,22 @@ const ProductCard = ({ _id, name, price, image, rating, category, onAddToCart, o
 
     return (
         <div style={{
-            backgroundColor: 'white',
+            backgroundColor: '#FAF9F6',
             borderRadius: '16px',
             overflow: 'hidden',
             transition: 'all 0.4s ease',
-            border: '1px solid #f0f0f0',
+            border: '1px solid #ebe9e0',
             position: 'relative',
             boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
         }} className="product-card"
-            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-8px)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-8px)';
+                e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.08)';
+            }}
+            onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.04)';
+            }}
         >
             <style>
                 {`
@@ -54,7 +68,7 @@ const ProductCard = ({ _id, name, price, image, rating, category, onAddToCart, o
                     }
                     @keyframes bounceIcon {
                         0% { transform: scale(1); }
-                        50% { transform: scale(1.4); }
+                        50% { transform: scale(1.1); }
                         100% { transform: scale(1); }
                     }
                     @keyframes slideInUp {
@@ -64,17 +78,15 @@ const ProductCard = ({ _id, name, price, image, rating, category, onAddToCart, o
                 `}
             </style>
 
-
-
             <div style={{
                 position: 'relative',
-                height: '280px',
+                height: '260px',
                 overflow: 'hidden',
-                padding: '30px',
+                padding: '20px',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                background: 'linear-gradient(180deg, #F9FBFF 0%, #E6F0FF 100%)',
+                backgroundColor: '#FAF9F6',
                 cursor: 'pointer'
             }}
                 onClick={() => navigate(`/product/${_id}`)}
@@ -101,7 +113,7 @@ const ProductCard = ({ _id, name, price, image, rating, category, onAddToCart, o
                     maxHeight: '100%',
                     maxWidth: '100%',
                     objectFit: 'contain',
-                    filter: 'drop-shadow(0 10px 15px rgba(27, 54, 93, 0.15))',
+                    filter: 'drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1))',
                     transition: 'opacity 0.5s ease, transform 0.5s ease',
                     opacity: imageLoaded ? 1 : 0
                 }}
@@ -110,7 +122,7 @@ const ProductCard = ({ _id, name, price, image, rating, category, onAddToCart, o
                         e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
                         setImageLoaded(true);
                     }}
-                    onMouseOver={(e) => imageLoaded && (e.target.style.transform = 'scale(1.08)')}
+                    onMouseOver={(e) => imageLoaded && (e.target.style.transform = 'scale(1.05)')}
                     onMouseOut={(e) => imageLoaded && (e.target.style.transform = 'scale(1)')}
                 />
                 <div style={{
@@ -118,7 +130,7 @@ const ProductCard = ({ _id, name, price, image, rating, category, onAddToCart, o
                     top: '12px',
                     left: '12px',
                     backgroundColor: '#FFF',
-                    color: '#2E7D32',
+                    color: '#2b7a4b',
                     padding: '6px 12px',
                     borderRadius: '20px',
                     fontSize: '0.75rem',
@@ -129,16 +141,17 @@ const ProductCard = ({ _id, name, price, image, rating, category, onAddToCart, o
                 </div>
             </div>
 
-            <div style={{ padding: '1.5rem', textAlign: 'left' }}>
-                <div style={{ color: '#F59E0B', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                    {'★'.repeat(5)} <span style={{ color: '#bbb', fontWeight: 'normal' }}>(5.0)</span>
+            <div style={{ padding: '1.2rem 1.5rem', textAlign: 'left' }}>
+                <div style={{ color: '#2b7a4b', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    {'★'.repeat(5)} <span style={{ color: '#555', fontSize: '0.8rem', fontWeight: '500' }}>226 reviews</span>
                 </div>
+                
                 <h3 style={{
-                    fontSize: '1.1rem',
-                    fontWeight: '700',
+                    fontSize: '1rem',
+                    fontWeight: '600',
                     marginBottom: '0.5rem',
-                    color: 'var(--color-primary)',
-                    height: '2.4em',
+                    color: '#000',
+                    minHeight: '2.4em',
                     overflow: 'hidden',
                     lineHeight: '1.2',
                     cursor: 'pointer'
@@ -147,90 +160,97 @@ const ProductCard = ({ _id, name, price, image, rating, category, onAddToCart, o
                 >
                     {name}
                 </h3>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '5px' }}>
-                            <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '25px', height: '25px', borderRadius: '50%', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>-</button>
-                            <span style={{ fontWeight: 'bold', minWidth: '20px', textAlign: 'center' }}>{qty}</span>
-                            <button onClick={() => setQty(q => q + 1)} style={{ width: '25px', height: '25px', borderRadius: '50%', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>+</button>
+                
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '1.2rem' }}>
+                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>Rs. {displayPrice}</span>
+                    {displayDiscount > 0 && (
+                        <>
+                            <span style={{ fontSize: '0.85rem', textDecoration: 'line-through', color: '#888' }}>Rs. {displayOrigPrice}</span>
+                            <span style={{ fontSize: '0.8rem', color: '#2b7a4b', fontWeight: '600' }}>Save {displayDiscount}%</span>
+                        </>
+                    )}
+                </div>
+
+                {sizes && sizes.length > 0 && (
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                        {sizes.map((s, idx) => (
+                            <button
+                                key={idx}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedSizeIndex(idx);
+                                }}
+                                style={{
+                                    padding: '6px 12px',
+                                    border: selectedSizeIndex === idx ? '1px solid transparent' : '1px solid #ddd',
+                                    backgroundColor: selectedSizeIndex === idx ? '#7BA942' : 'transparent',
+                                    color: selectedSizeIndex === idx ? 'white' : '#333',
+                                    borderRadius: '20px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    minWidth: '60px'
+                                }}
+                            >
+                                {s.label && <span style={{ fontSize: '0.7rem', opacity: 0.9 }}>{s.label}</span>}
+                                <span>{s.size}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <div style={{ position: 'relative' }}>
+                    <button
+                        onClick={handleAddClick}
+                        style={{
+                            width: '100%',
+                            padding: '12px',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            gap: '8px',
+                            backgroundColor: '#000',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '25px',
+                            fontSize: '0.95rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            animation: isAnimating ? 'bounceIcon 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' : 'none',
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#333'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#000'}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                        Add to cart
+                    </button>
+
+                    {/* SUCCESS TOOLTIP */}
+                    {showToast && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '-45px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: 'bold',
+                            zIndex: 100,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            animation: 'slideInUp 0.3s ease-out',
+                            whiteSpace: 'nowrap'
+                        }}>
+                            Added to cart! ✅
                         </div>
-                        <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'RGB(0, 0, 128)' }}>₹{price}</span>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                        {/* Add to Cart Icon Button */}
-                        <button
-                            onClick={handleAddClick}
-                            style={{
-                                width: '45px',
-                                height: '45px',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                backgroundColor: '#28a745',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '50%',
-                                cursor: 'pointer',
-                                transition: 'all 0.3s ease',
-                                animation: isAnimating ? 'bounceIcon 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' : 'none',
-                                boxShadow: '0 4px 10px rgba(40, 167, 69, 0.3)'
-                            }}
-                            title="Add In Card"
-                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#218838'}
-                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#28a745'}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-                        </button>
-
-                        {/* Buy Now Icon Button */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onBuyNow({ _id, name, price, image }, qty);
-                            }}
-                            style={{
-                                width: '45px',
-                                height: '45px',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                backgroundColor: 'RGB(0, 0, 128)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '50%',
-                                cursor: 'pointer',
-                                transition: 'all 0.3s ease',
-                                boxShadow: '0 4px 10px rgba(27, 54, 93, 0.3)'
-                            }}
-                            title="Buy Now"
-                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#132845'}
-                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'RGB(0, 0, 128)'}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                        </button>
-
-                        {/* SUCCESS TOOLTIP - Appears below icons */}
-                        {showToast && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '50px',
-                                right: '0',
-                                backgroundColor: '#28a745',
-                                color: 'white',
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                fontSize: '0.75rem',
-                                fontWeight: 'bold',
-                                zIndex: 100,
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                animation: 'slideInUp 0.3s ease-out',
-                                whiteSpace: 'nowrap'
-                            }}>
-                                Added in card! ✅
-                            </div>
-                        )}
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -365,14 +385,34 @@ const ProductGrid = () => {
                 <h2 className="section-title">Best Sellers</h2>
                 <p className="section-subtitle">Our most loved plant-based cleaning solutions</p>
 
+                <style>
+                    {`
+                        .responsive-grid {
+                            display: grid;
+                            gap: 1.5rem;
+                            grid-template-columns: repeat(4, 1fr);
+                        }
+                        @media (max-width: 1024px) {
+                            .responsive-grid {
+                                grid-template-columns: repeat(3, 1fr);
+                            }
+                        }
+                        @media (max-width: 768px) {
+                            .responsive-grid {
+                                grid-template-columns: repeat(2, 1fr);
+                            }
+                        }
+                        @media (max-width: 480px) {
+                            .responsive-grid {
+                                grid-template-columns: repeat(1, 1fr);
+                            }
+                        }
+                    `}
+                </style>
                 {loading ? (
                     <div style={{ textAlign: 'center', padding: '3rem' }}>Loading products...</div>
                 ) : (
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                        gap: '2rem'
-                    }}>
+                    <div className="responsive-grid">
                         {products.map(product => (
                             <ProductCard
                                 key={product._id}

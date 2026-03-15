@@ -177,7 +177,20 @@ const AdminDashboard = () => {
         formData.append('howToUse', newProduct.howToUse);
         const bulletsArray = newProduct.bulletPoints.split(',').map(b => b.trim()).filter(b => b);
         formData.append('bulletPoints', JSON.stringify(bulletsArray));
-        formData.append('sizes', JSON.stringify(sizes));
+        
+        const sizesData = sizes.map(s => ({
+            label: s.label,
+            size: s.size,
+            price: s.price,
+            originalPrice: s.originalPrice
+        }));
+        formData.append('sizes', JSON.stringify(sizesData));
+        
+        sizes.forEach((s, index) => {
+            if (s.imageFile) {
+                formData.append(`sizeImage_${index}`, s.imageFile);
+            }
+        });
 
         if (image) formData.append('image', image);
         if (additionalImages) {
@@ -266,11 +279,17 @@ const AdminDashboard = () => {
         navigate('/admin/login');
     };
 
-    const handleAddSize = () => setSizes([...sizes, { label: '', size: '', price: '', originalPrice: '' }]);
+    const handleAddSize = () => setSizes([...sizes, { label: '', size: '', price: '', originalPrice: '', imageFile: null }]);
     const handleRemoveSize = (index) => setSizes(sizes.filter((_, i) => i !== index));
     const handleSizeChange = (index, field, value) => {
         const newSizes = [...sizes];
         newSizes[index][field] = value;
+        setSizes(newSizes);
+    };
+
+    const handleSizeImageChange = (index, file) => {
+        const newSizes = [...sizes];
+        newSizes[index].imageFile = file;
         setSizes(newSizes);
     };
 
@@ -362,12 +381,18 @@ const AdminDashboard = () => {
                                 <div style={{ gridColumn: '1 / -1', backgroundColor: '#f9f9f9', padding: '10px', borderRadius: '5px' }}>
                                     <h4 style={{ marginBottom: '10px' }}>Sizes / Variants</h4>
                                     {sizes.map((s, index) => (
-                                        <div key={index} style={{ display: 'flex', gap: '5px', marginBottom: '5px' }}>
-                                            <input type="text" placeholder="Label (e.g. Most-Selling)" value={s.label} onChange={(e) => handleSizeChange(index, 'label', e.target.value)} style={{ flex: 1, padding: '5px' }} />
-                                            <input type="text" placeholder="Size (e.g. 750ml)" required value={s.size} onChange={(e) => handleSizeChange(index, 'size', e.target.value)} style={{ flex: 1, padding: '5px' }} />
-                                            <input type="number" placeholder="Price" required value={s.price} onChange={(e) => handleSizeChange(index, 'price', e.target.value)} style={{ flex: 1, padding: '5px' }} />
-                                            <input type="number" placeholder="Orig. Price" value={s.originalPrice} onChange={(e) => handleSizeChange(index, 'originalPrice', e.target.value)} style={{ flex: 1, padding: '5px' }} />
-                                            <button type="button" onClick={() => handleRemoveSize(index)} style={{ padding: '5px', background: 'red', color: 'white', border: 'none', borderRadius: '3px' }}>X</button>
+                                        <div key={index} style={{ borderBottom: '1px solid #ddd', paddingBottom: '10px', marginBottom: '10px' }}>
+                                            <div style={{ display: 'flex', gap: '5px', marginBottom: '5px' }}>
+                                                <input type="text" placeholder="Label (e.g. Most-Selling)" value={s.label} onChange={(e) => handleSizeChange(index, 'label', e.target.value)} style={{ flex: 1, padding: '5px' }} />
+                                                <input type="text" placeholder="Size (e.g. 750ml)" required value={s.size} onChange={(e) => handleSizeChange(index, 'size', e.target.value)} style={{ flex: 1, padding: '5px' }} />
+                                                <input type="number" placeholder="Price" required value={s.price} onChange={(e) => handleSizeChange(index, 'price', e.target.value)} style={{ flex: 1, padding: '5px' }} />
+                                                <input type="number" placeholder="Orig. Price" value={s.originalPrice} onChange={(e) => handleSizeChange(index, 'originalPrice', e.target.value)} style={{ flex: 1, padding: '5px' }} />
+                                                <button type="button" onClick={() => handleRemoveSize(index)} style={{ padding: '5px', background: 'red', color: 'white', border: 'none', borderRadius: '3px' }}>X</button>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <label style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Variant Image:</label>
+                                                <input type="file" accept="image/*" onChange={(e) => handleSizeImageChange(index, e.target.files[0])} style={{ fontSize: '0.8rem' }} />
+                                            </div>
                                         </div>
                                     ))}
                                     <button type="button" onClick={handleAddSize} style={{ padding: '5px 10px', background: 'rgb(0, 0, 128)', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer', fontSize: '0.8rem' }}>+ Add Size Variant</button>
